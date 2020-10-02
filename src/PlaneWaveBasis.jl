@@ -301,6 +301,20 @@ function index_G_vectors(basis::PlaneWaveBasis, kpoint::Kpoint,
     get(kpoint.mapping_inv, idx_linear, nothing)
 end
 
+
+"""
+Return the index range of ``k``-points that have a particular spin component.
+"""
+function krange_spin(basis::PlaneWaveBasis, spin::Symbol)
+    n_spins = length(spin_components(basis.model))
+    n_spins == 1 && return 1:length(basis.kpoints)
+
+    spinlength = Int(length(basis.kpoints) / n_spins)
+    ispin = index_spin(spin)
+    isnothing(ispin) && return nothing
+    (1 + (ispin - 1) * spinlength):(ispin * spinlength)
+end
+
 #
 # Perform (i)FFTs.
 #

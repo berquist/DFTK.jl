@@ -86,3 +86,15 @@ idown = iup + Int(length(scfres.basis.kpoints) / 2)
 #     each ``k``-Point coordinate twice, once associated with `:up` spin and once with `:down`
 #     spin. The list first contains all spin-up ``k``-Points and then all spin-down ``k``-points.
 #     Therefore `iup` and `idown` index the same ``k``-Point, but differing spins.
+
+# We can also observe the spin-polarization by looking at the density of states
+# in the spin-up and spin-down spin around the Fermi level.
+
+using Plots
+εs = range(minimum(minimum(scfres.eigenvalues)) - .5,
+           maximum(maximum(scfres.eigenvalues)) + .5, length=1000)
+Dup   = DOS.(εs, Ref(basis), Ref(scfres.eigenvalues), spins=(:up, ))
+Ddown = DOS.(εs, Ref(basis), Ref(scfres.eigenvalues), spins=(:down, ))
+q = plot(εs,  Dup, label="DOS :up", color=:blue)
+plot!(q, εs, Ddown, label="DOS :down", color=:red)
+vline!(q, [scfres.εF], label="εF", color=:green, lw=1.5)
