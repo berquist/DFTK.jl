@@ -54,9 +54,9 @@ magnetic_moments = [Fe => [4]]
 model = model_LDA(lattice, atoms, magnetic_moments=magnetic_moments, temperature=0.01)
 basis = PlaneWaveBasis(model, Ecut; kgrid=kgrid)
 ρspin = guess_spin_density(basis, magnetic_moments)
-scfres = self_consistent_field(basis, tol=1e-10, ρspin=ρspin, mixing=KerkerMixing())
+scfres = self_consistent_field(basis, tol=1e-6, ρspin=ρspin, mixing=KerkerMixing())
 
-scfres_nospin.energies
+scfres.energies
 
 # In direct comparison we notice the first, spin-paired calculation to be
 # a little higher in energy
@@ -87,8 +87,8 @@ idown = iup + Int(length(scfres.basis.kpoints) / 2)
 #     spin. The list first contains all spin-up ``k``-Points and then all spin-down ``k``-points.
 #     Therefore `iup` and `idown` index the same ``k``-Point, but differing spins.
 
-# We can also observe the spin-polarization by looking at the density of states
-# in the spin-up and spin-down spin around the Fermi level.
+# We can observe the spin-polarization by looking at the density of states (DOS)
+# around the Fermi level, where the spin-up and spin-down DOS differ.
 
 using Plots
 εs = range(minimum(minimum(scfres.eigenvalues)) - .5,
@@ -98,3 +98,6 @@ Ddown = DOS.(εs, Ref(basis), Ref(scfres.eigenvalues), spins=(:down, ))
 q = plot(εs,  Dup, label="DOS :up", color=:blue)
 plot!(q, εs, Ddown, label="DOS :down", color=:red)
 vline!(q, [scfres.εF], label="εF", color=:green, lw=1.5)
+
+# Similarly the band structure shows clear differences between both spin components.
+plot_bandstructure(scfres, kline_density=5, unit=:eV)

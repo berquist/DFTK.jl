@@ -38,18 +38,23 @@ function pymatgen_bandstructure(basis, λ, εF, klabels)
     bandstructure = pyimport("pymatgen.electronic_structure.bandstructure")
 
     # This assumes no spin polarization
-    @assert basis.model.spin_polarization in (:none, :spinless)
+    @assert basis.model.spin_polarization in (:none, :spinless, :collinear)
 
-    eigenvals_spin_up = Matrix{eltype(λ[1])}(undef, length(λ[1]), length(basis.kpoints))
-    for (ik, λs) in enumerate(λ)
-        eigenvals_spin_up[:, ik] = λs
+    mg_spinmap = Dict(1 => Spin.up, 2 => Spin.down)
+    mg_eigenvals = Dict()
+    for (iσ, σ) in enumerate(spin_components(basis.model))
+        n_kpt_mod = length(krange_spin(basis, σ))
+        eigenvals = Matrix{eltype(λ[1])}(undef, length(λ[1]), n_kpt_mod)
+        for (ito, ik) in enumerate(krange_spin(basis, σ))
+            eigenvals[:, ito] = λ[ik]
+        end
+        mg_eigenvals[mg_spinmap[iσ]] = eigenvals
     end
-    eigenvals = Dict(Spin.up => eigenvals_spin_up)
 
-    kcoords = [kpt.coordinate for kpt in basis.kpoints]
+    kcoords = [basis.kpoints[ik].coordinate_cart for ik in krange_spin(basis, 1)]
     pylattice = pymatgen_lattice(basis.model.lattice)
     bandstructure.BandStructureSymmLine(
-        kcoords, eigenvals, pylattice.reciprocal_lattice, εF,
+        kcoords, mg_eigenvals, pylattice.reciprocal_lattice, εF,
         labels_dict=klabels, coords_are_cartesian=true
     )
 end
